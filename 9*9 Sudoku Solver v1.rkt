@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname |9*9 Sudoku Solver |) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #t)))
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname |9*9 Sudoku Solver v1|) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #t)))
 ;; Sudoku Solver
 ;; Qintu Tao
 ;; 2019-12-31, NewYear's Eve
@@ -27,6 +27,31 @@
                       #f 6  #f   #f #f #f   2  8  #f 
                       #f #f #f   4  1  9    #f #f 5  
                       #f #f #f   #f 8  #f   #f 7  9 ))
+
+(define BOARD2 (list  5  3  #f   #f 7  #f   #f #f #f 
+                      6  #f #f   1  9  5    #f #f #f 
+                      #f 9  8    #f #f #f   1  6  #f 
+                    
+                      8  #f #f   #f 6  #f   #f #f 3  
+                      4  #f #f   8  #f  3   #f #f 1  
+                      7  #f #f   #f 2  #f   #f #f 6  
+                    
+                      #f 6  #f   #f #f #f   2  8  #f 
+                      #f #f #f   4  1  9    #f #f 5  
+                      #f #f #f   #f 8  #f   #f 7  9 )) ; cannot be solved
+
+(define BOARD3 (list  5  3  #f   #f 7  #f   #f #f #f 
+                      6  #f #f   1  9  5    #f #f #f 
+                      #f 9  8    #f #f #f   #f 6  #f 
+                    
+                      8  #f #f   #f 6  #f   #f #f 3  
+                      4  #f #f   8  3  3   #f #f 1  
+                      7  #f #f   #f 2  #f   #f #f 6  
+                    
+                      #f 6  #f   #f #f #f   2  8  #f 
+                      #f #f #f   4  1  9    #f #f 5  
+                      #f #f #f   #f 8  #f   #f 7  9 )) ; already an error
+
 (@htdd Unit)
 ;; Unit is one of:
 ;; - #f
@@ -35,6 +60,7 @@
 ;;  #f means empty;
 ;; CONSTRAINT, when Natural, range in [1,9]
 
+;; Solve Function
 (define UNIT1 1)
 (define UNIT #f)
 (check-expect (solve BOARD1)
@@ -49,8 +75,12 @@
                     9 6 1   5 3 7   2 8 4
                     2 8 7   4 1 9   6 3 5
                     3 4 5   2 8 6   1 7 9))
-              
-;; Solve Function
+(check-expect (solve BOARD2)
+              false)
+(check-expect (solve BOARD3)
+              false)
+
+(@template genrec)
 (define (solve b0)
   (local [(define-struct state (b i))
           (define (solve-s s)
@@ -91,8 +121,10 @@
 ;; produce true if there is no #f left on the board
 
 (check-expect (solved? BOARD1) false)
-(check-expect (solved? (list 3)) true)
+(check-expect (solved? (list 3)) true) ; (list 3) is used to simulate a board
+                                       ; without #f 
 
+(@template Board)
 (define (solved? b)
   (not (member? #f b)))
 
@@ -120,7 +152,9 @@
                 #false
                 #false
                 7
-                9))             
+                9))
+
+(@template use-abstract-fn)
 (define (bd-row b i)
   (build-list BOARD-SIZE (λ (x)
                   (list-ref b (+ (* (quotient i BOARD-SIZE) BOARD-SIZE) x)))))
@@ -151,6 +185,8 @@
                #false
                5
                9))
+
+(@template use-abstract-fn)
 (define (bd-col b i)
   (build-list BOARD-SIZE (λ (x)
                   (list-ref b (+ (* x BOARD-SIZE) (remainder i BOARD-SIZE))))))
@@ -181,6 +217,8 @@
                #false
                7
                9))
+
+(@template use-abstract-fn)
 (define (bd-sqr b i)
   (build-list 9 (λ (x)
                   (list-ref b (+ (+ (* (quotient (quotient i BOARD-SIZE) 3) 
@@ -201,7 +239,10 @@
 
 (check-expect (valid? 4 TEST-ROW TEST-COL TEST-SQR) true)
 (check-expect (valid? 3 TEST-ROW TEST-COL TEST-SQR) false)
+(check-expect (valid? 2 TEST-ROW TEST-COL TEST-SQR) false)
+(check-expect (valid? 5 TEST-ROW TEST-COL TEST-SQR) false)
 
+(@template Natural (listof Unit))
 (define (valid? n row col sqr)
   (not (or (member? n row)
            (member? n col)
@@ -213,7 +254,9 @@
 ;; assign the unit of the given index to the given value,
 ;;  produces the changed board
 
-;; NOTE: test doen interactively 
+;; NOTE: test doen interactively
+
+(@template Board accumulator)
 (define (assign b0 n)
   (local [(define (change b acc)
             ;; Accumulator
